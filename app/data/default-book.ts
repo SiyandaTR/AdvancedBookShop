@@ -4,7 +4,7 @@ export const defaultBook = {
     {
       title: "Chapter 1: The Basics",
       pages: [
-        "Programming is the art of telling a computer what to do. It's a skill that combines logic, creativity, and problem-solving. In this chapter, we'll explore the fundamental concepts that form the building blocks of all programming languages.",
+        "Infomation Programming is the art of telling a computer what to do. It's a skill that combines logic, creativity, and problem-solving. In this chapter, we'll explore the fundamental concepts that form the building blocks of all programming languages.",
         "Variables are like containers that hold data. They can store numbers, text, or more complex information. Functions are reusable blocks of code that perform specific tasks. They help us organize our code and make it more efficient.",
         "Conditional statements allow our programs to make decisions. They use keywords like 'if' and 'else' to execute different code based on certain conditions. Loops, on the other hand, let us repeat actions multiple times without writing the same code over and over."
       ]
