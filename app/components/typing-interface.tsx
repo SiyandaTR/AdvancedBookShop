@@ -85,13 +85,13 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
   const getCursorStyle = () => {
     switch (settings.cursorStyle) {
       case 'line':
-        return 'w-0.5 h-6 bg-black animate-blink'
+        return 'w-0.5 h-6 bg-foreground animate-blink'
       case 'block':
-        return 'w-2 h-6 bg-black bg-opacity-50 animate-blink'
+        return 'w-2 h-6 bg-foreground/50 animate-blink'
       case 'underline':
-        return 'w-2 h-0.5 bg-black -bottom-1 animate-blink'
+        return 'w-2 h-0.5 bg-foreground -bottom-1 animate-blink'
       default:
-        return 'w-0.5 h-6 bg-black animate-blink'
+        return 'w-0.5 h-6 bg-foreground animate-blink'
     }
   }
 
@@ -125,13 +125,15 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
 
   const renderText = () => {
     return text.split('').map((char, index) => {
-      let className = ''
+      let className = 'text-muted-foreground/60'
       if (index < typedText.length) {
         if (mistakePositions.includes(index)) {
-          className = 'bg-red-200 text-red-700'
+          className = 'bg-red-500/20 text-red-600 dark:text-red-400'
         } else {
-          className = 'text-green-600'
+          className = 'text-foreground'
         }
+      } else if (index === cursorPosition) {
+        className = 'text-foreground'
       }
       return (
         <span key={index} className={className}>
@@ -141,13 +143,21 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
     })
   }
 
+  const progress = text.length > 0 ? Math.round((typedText.length / text.length) * 100) : 0
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{defaultBook.chapters[currentChapter].title}</h2>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">{defaultBook.chapters[currentChapter].title}</h2>
+          <p className="text-sm text-muted-foreground">
+            Page {currentPage + 1} of {defaultBook.chapters[currentChapter].pages.length}
+            {typedText.length > 0 && ` — ${progress}% complete`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
             size="icon"
             onClick={() => navigatePage('prev')}
             disabled={currentChapter === 0 && currentPage === 0}
@@ -155,8 +165,8 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Select value={currentChapter.toString()} onValueChange={handleChapterChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select chapter" />
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Chapter" />
             </SelectTrigger>
             <SelectContent>
               {defaultBook.chapters.map((chapter, index) => (
@@ -167,8 +177,8 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
             </SelectContent>
           </Select>
           <Select value={currentPage.toString()} onValueChange={handlePageChange}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select page" />
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Page" />
             </SelectTrigger>
             <SelectContent>
               {defaultBook.chapters[currentChapter].pages.map((_, index) => (
@@ -178,11 +188,11 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
               ))}
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={() => navigatePage('next')}
-            disabled={currentChapter === defaultBook.chapters.length - 1 && 
+            disabled={currentChapter === defaultBook.chapters.length - 1 &&
                       currentPage === defaultBook.chapters[currentChapter].pages.length - 1}
           >
             <ChevronRight className="h-4 w-4" />
@@ -190,24 +200,38 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
           <SettingsPopup settings={settings} setSettings={setSettings} />
         </div>
       </div>
-      <div 
+
+      <div className="relative">
+        <div className="h-1 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
+
+      <div
         ref={inputRef}
-        className="relative border p-4 rounded min-h-[200px] focus:outline-none cursor-text"
+        className="relative border rounded-lg p-6 min-h-[240px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background cursor-text bg-card leading-relaxed selection:bg-primary/20"
         style={{
           fontSize: `${settings.fontSize}px`,
-          color: settings.fontColor,
           fontFamily: settings.fontType,
+          color: settings.fontColor !== '#000000' ? settings.fontColor : undefined,
         }}
         onKeyDown={handleKeyDown}
         tabIndex={0}
       >
         {renderText()}
-        <span 
-          className={`absolute ${getCursorStyle()}`} 
+        <span
+          className={`absolute ${getCursorStyle()}`}
           style={{ left: `${cursorPosition * 0.6}em`, top: '1em' }}
         />
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>{typedText.length} / {text.length} characters</span>
+        <span>{mistakes} mistake{mistakes !== 1 ? 's' : ''}</span>
       </div>
     </div>
   )
 }
-

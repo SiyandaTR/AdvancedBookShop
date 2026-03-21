@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PDFUploader } from './components/pdf-uploader'
 import { TypingInterface } from './components/typing-interface'
 import { AnalyticsPanel } from './components/analytics-panel'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { BookOpen, FileText, BarChart3 } from 'lucide-react'
 
 export default function TypingApp() {
   const [currentPDF, setCurrentPDF] = useState<string | null>(null)
@@ -17,25 +19,50 @@ export default function TypingApp() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Typing Tool</h1>
-      <Tabs defaultValue="typing">
-        <TabsList>
-          <TabsTrigger value="typing">Typing</TabsTrigger>
-          <TabsTrigger value="pdfs">PDFs</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-        <TabsContent value="typing">
-          <TypingInterface updateAnalytics={updateAnalytics} />
-        </TabsContent>
-        <TabsContent value="pdfs">
-          <PDFUploader setCurrentPDF={setCurrentPDF} />
-        </TabsContent>
-        <TabsContent value="analytics">
-          <AnalyticsPanel wpm={wpm} accuracy={accuracy} />
-        </TabsContent>
-      </Tabs>
+    <div className="min-h-screen flex flex-col">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold tracking-tight">Advanced Book Shop</h1>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <Tabs defaultValue="typing" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="typing" className="gap-1.5">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">Typing</span>
+            </TabsTrigger>
+            <TabsTrigger value="pdfs" className="gap-1.5">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">PDFs</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1.5">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="typing" className="mt-0">
+            <TypingInterface updateAnalytics={updateAnalytics} />
+          </TabsContent>
+          <TabsContent value="pdfs" className="mt-0">
+            <PDFUploader setCurrentPDF={setCurrentPDF} />
+          </TabsContent>
+          <TabsContent value="analytics" className="mt-0">
+            <AnalyticsPanel wpm={wpm} accuracy={accuracy} />
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      <footer className="border-t py-4">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          Advanced Book Shop — Typing Practice Tool
+        </div>
+      </footer>
     </div>
   )
 }
-
