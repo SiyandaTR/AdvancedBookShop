@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PDFUploader } from './components/pdf-uploader'
-import { TypingInterface } from './components/typing-interface'
-import { AnalyticsPanel } from './components/analytics-panel'
+import { PDFUploader } from './routs/pdf-uploader'
+import { TypingInterface } from './routs/typing-interface'
+import { AnalyticsPanel } from './routs/analytics-panel'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { BookOpen, FileText, BarChart3 } from 'lucide-react'
 

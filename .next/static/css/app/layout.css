@@ -815,6 +815,9 @@ video {
 .block {
   display: block;
 }
+.inline-block {
+  display: inline-block;
+}
 .flex {
   display: flex;
 }
@@ -914,6 +917,12 @@ video {
 }
 .h-svh {
   height: 100svh;
+}
+.h-0 {
+  height: 0px;
+}
+.h-\[1\.2em\] {
+  height: 1.2em;
 }
 .max-h-96 {
   max-height: 24rem;
@@ -1016,6 +1025,9 @@ video {
 }
 .w-px {
   width: 1px;
+}
+.w-\[0\.6em\] {
+  width: 0.6em;
 }
 .min-w-0 {
   min-width: 0px;
@@ -1267,6 +1279,9 @@ video {
 }
 .whitespace-nowrap {
   white-space: nowrap;
+}
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
 }
 .break-words {
   overflow-wrap: break-word;
@@ -1547,6 +1562,12 @@ video {
 }
 .align-middle {
   vertical-align: middle;
+}
+.align-bottom {
+  vertical-align: bottom;
+}
+.align-text-bottom {
+  vertical-align: text-bottom;
 }
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
