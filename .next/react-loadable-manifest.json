@@ -1,1 +1,9 @@
-{}
+{
+  "app/routs/pdf-uploader.tsx -> pdfjs-dist": {
+    "id": 7781,
+    "files": [
+      "static/chunks/9b0008ae.744bc629ebdc5418.js",
+      "static/chunks/609-c7931071362a6c9e.js"
+    ]
+  }
+}

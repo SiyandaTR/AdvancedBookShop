@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,7 +51,11 @@ function isValidEmail(email: string): boolean {
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null)
+
+  useEffect(() => {
+    setSupabase(createClient())
+  }, [])
 
   // Form state
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin")
@@ -112,6 +117,7 @@ export default function LoginPage() {
   }, [resetState])
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) return
     setGoogleLoading(true)
     setError(null)
 
@@ -131,7 +137,7 @@ export default function LoginPage() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setTouched({ email: true, password: true, confirmPassword: false })
-    if (!isSignInFormValid) return
+    if (!isSignInFormValid || !supabase) return
 
     setLoading(true)
     setError(null)
@@ -155,7 +161,7 @@ export default function LoginPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setTouched({ email: true, password: true, confirmPassword: true })
-    if (!isSignUpFormValid) return
+    if (!isSignUpFormValid || !supabase) return
 
     setLoading(true)
     setError(null)

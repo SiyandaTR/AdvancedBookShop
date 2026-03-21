@@ -10,8 +10,13 @@ import { AnalyticsPanel } from './routs/analytics-panel'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { BookOpen, FileText, BarChart3, LogOut } from 'lucide-react'
 
+export interface PDFData {
+  name: string
+  text: string
+}
+
 export default function TypingApp({ email }: { email: string }) {
-  const [currentPDF, setCurrentPDF] = useState<string | null>(null)
+  const [currentPDF, setCurrentPDF] = useState<PDFData | null>(null)
   const [wpm, setWpm] = useState(0)
   const [accuracy, setAccuracy] = useState(100)
 
@@ -57,10 +62,10 @@ export default function TypingApp({ email }: { email: string }) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="typing" className="mt-0">
-            <TypingInterface updateAnalytics={updateAnalytics} />
+            <TypingInterface updateAnalytics={updateAnalytics} pdfText={currentPDF?.text ?? null} />
           </TabsContent>
           <TabsContent value="pdfs" className="mt-0">
-            <PDFUploader setCurrentPDF={setCurrentPDF} />
+            <PDFUploader currentPDF={currentPDF} setCurrentPDF={setCurrentPDF} onRemovePDF={() => setCurrentPDF(null)} />
           </TabsContent>
           <TabsContent value="analytics" className="mt-0">
             <AnalyticsPanel wpm={wpm} accuracy={accuracy} />
