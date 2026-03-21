@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { defaultBook } from '../data/default-book'
+import type React from "react"
+import { useState, useEffect, useRef } from "react"
+import { defaultBook } from "../data/default-book"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { SettingsPopup } from './settings-popup'
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { SettingsPopup } from "./settings-popup"
 
 interface TypingInterfaceProps {
-  updateAnalytics: (wpm: number, accuracy: number) => void;
+  updateAnalytics: (wpm: number, accuracy: number) => void
 }
 
 export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
@@ -16,203 +17,221 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
   const [currentPage, setCurrentPage] = useState(0)
   const [text, setText] = useState("")
   const [typedText, setTypedText] = useState("")
-  const [cursorPosition, setCursorPosition] = useState(0)
   const [startTime, setStartTime] = useState<number | null>(null)
-  const [mistakes, setMistakes] = useState(0)
-  const [mistakePositions, setMistakePositions] = useState<number[]>([])
+  const [totalMistakes, setTotalMistakes] = useState(0)
   const [settings, setSettings] = useState({
     fontSize: 16,
-    fontColor: '#000000',
-    fontType: 'Arial',
-    cursorStyle: 'line',
+    fontColor: "#000000",
+    fontType: "Arial",
+    cursorStyle: "line",
     readingMode: false,
     ignoreCapitalization: false,
     skipPunctuation: false,
     stopCursorAfterMistake: true,
   })
 
-  const inputRef = useRef<HTMLInputElement>(null)
-  const prevValueRef = useRef("")
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const textDisplayRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setText(defaultBook.chapters[currentChapter].pages[currentPage])
     setTypedText("")
-    setCursorPosition(0)
     setStartTime(null)
-    setMistakes(0)
-    setMistakePositions([])
-    prevValueRef.current = ""
+    setTotalMistakes(0)
   }, [currentChapter, currentPage])
 
   useEffect(() => {
-    inputRef.current?.focus()
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
   }, [])
 
-  const handleInput = useCallback((event: React.FormEvent<HTMLInputElement>) => {
-    const input = event.currentTarget
-    const newValue = input.value
-    const prevValue = prevValueRef.current
-    prevValueRef.current = newValue
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = event.target.value
 
     if (!startTime) {
       setStartTime(Date.now())
     }
 
-    if (newValue.length < prevValue.length) {
-      // Backspace
-      const deletedPos = prevValue.length - 1
-      setTypedText(newValue)
-      setCursorPosition(newValue.length)
-      setMistakePositions(prev => prev.filter(pos => pos !== deletedPos))
-      return
-    }
+    // Handle new character input (when new value is longer)
+    if (newValue.length > typedText.length) {
+      const newCharIndex = newValue.length - 1
+      const newChar = newValue[newCharIndex]
+      const correctChar = text[newCharIndex]
 
-    if (newValue.length === prevValue.length) {
-      return
+      // Only count as mistake if the new character is wrong
+      if (newChar !== correctChar) {
+        setTotalMistakes((prev) => prev + 1)
+      }
     }
-
-    // New character typed
-    const newChar = newValue[newValue.length - 1]
-    const pos = newValue.length - 1
 
     setTypedText(newValue)
-    setCursorPosition(newValue.length)
 
-    const expectedChar = text[pos]
-    if (newChar !== expectedChar) {
-      setMistakes(prev => prev + 1)
-      setMistakePositions(prev => [...prev, pos])
-    }
-
+    // Check if typing is complete
     if (newValue.length >= text.length) {
-      const charAdded = newChar !== expectedChar ? 1 : 0
-      const finalMistakes = mistakes + charAdded
       const endTime = Date.now()
-      const timeElapsed = (endTime - (startTime || endTime)) / 60000
+      const timeElapsed = (endTime - (startTime || endTime)) / 60000 // in minutes
       const wordsTyped = text.trim().split(/\s+/).length
       const wpm = Math.round(wordsTyped / timeElapsed)
-      const accuracy = Math.round(((text.length - finalMistakes) / text.length) * 100)
+
+      // Calculate current mistakes (characters that are currently wrong)
+      const currentMistakes = getCurrentMistakeCount(newValue)
+      const accuracy = Math.round(((text.length - currentMistakes) / text.length) * 100)
+
       updateAnalytics(wpm, accuracy)
-    }
-  }, [typedText, text, startTime, mistakes, updateAnalytics])
-
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    // Prevent backspace when nothing is typed
-    if (event.key === 'Backspace' && typedText.length === 0) {
-      event.preventDefault()
-    }
-    // Prevent typing beyond the text length
-    if (event.key.length === 1 && typedText.length >= text.length) {
-      event.preventDefault()
-    }
-  }, [typedText, text])
-
-  const getCursorStyle = () => {
-    switch (settings.cursorStyle) {
-      case 'line':
-        return 'inline-block w-0.5 h-[1.2em] bg-foreground animate-blink align-text-bottom'
-      case 'block':
-        return 'inline-block w-[0.6em] h-[1.2em] bg-foreground/50 animate-blink align-text-bottom'
-      case 'underline':
-        return 'inline-block w-[0.6em] h-0.5 bg-foreground animate-blink align-bottom'
-      default:
-        return 'inline-block w-0.5 h-[1.2em] bg-foreground animate-blink align-text-bottom'
     }
   }
 
+  const getCurrentMistakeCount = (currentTypedText: string) => {
+    let mistakes = 0
+    for (let i = 0; i < currentTypedText.length && i < text.length; i++) {
+      if (currentTypedText[i] !== text[i]) {
+        mistakes++
+      }
+    }
+    return mistakes
+  }
+
   const handleChapterChange = (value: string) => {
-    const newChapter = parseInt(value, 10)
+    const newChapter = Number.parseInt(value, 10)
     setCurrentChapter(newChapter)
     setCurrentPage(0)
   }
 
   const handlePageChange = (value: string) => {
-    setCurrentPage(parseInt(value, 10))
+    setCurrentPage(Number.parseInt(value, 10))
   }
 
-  const navigatePage = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
+  const navigatePage = (direction: "prev" | "next") => {
+    if (direction === "prev") {
       if (currentPage > 0) {
-        setCurrentPage(prev => prev - 1)
+        setCurrentPage((prev) => prev - 1)
       } else if (currentChapter > 0) {
-        setCurrentChapter(prev => prev - 1)
+        setCurrentChapter((prev) => prev - 1)
         setCurrentPage(defaultBook.chapters[currentChapter - 1].pages.length - 1)
       }
     } else {
       if (currentPage < defaultBook.chapters[currentChapter].pages.length - 1) {
-        setCurrentPage(prev => prev + 1)
+        setCurrentPage((prev) => prev + 1)
       } else if (currentChapter < defaultBook.chapters.length - 1) {
-        setCurrentChapter(prev => prev + 1)
+        setCurrentChapter((prev) => prev + 1)
         setCurrentPage(0)
       }
     }
   }
 
-  const renderText = () => {
-    const elements: React.ReactNode[] = []
+  const getCursorElement = () => {
+    const baseStyle = {
+      fontFamily: settings.fontType,
+      fontSize: `${settings.fontSize}px`,
+      lineHeight: "1.5",
+    }
 
-    text.split('').forEach((char, index) => {
-      if (index === cursorPosition) {
-        elements.push(
-          <span key={`cursor-${index}`} className={getCursorStyle()} />
+    switch (settings.cursorStyle) {
+      case "line":
+        return (
+          <span
+            className="inline-block w-0.5 bg-black animate-pulse align-baseline"
+            style={{
+              ...baseStyle,
+              height: "1em",
+              verticalAlign: "baseline",
+            }}
+          />
         )
-      }
+      case "block":
+        return (
+          <span
+            className="inline-block bg-black bg-opacity-30 animate-pulse"
+            style={{
+              ...baseStyle,
+              width: "0.5em",
+              height: "1em",
+              verticalAlign: "baseline",
+            }}
+          >
+            &nbsp;
+          </span>
+        )
+      case "underline":
+        return (
+          <span
+            className="inline-block border-b-2 border-black animate-pulse"
+            style={{
+              ...baseStyle,
+              width: "0.5em",
+              height: "1em",
+              verticalAlign: "baseline",
+            }}
+          >
+            &nbsp;
+          </span>
+        )
+      default:
+        return (
+          <span
+            className="inline-block w-0.5 bg-black animate-pulse align-baseline"
+            style={{
+              ...baseStyle,
+              height: "1em",
+              verticalAlign: "baseline",
+            }}
+          />
+        )
+    }
+  }
 
-      let className = 'text-muted-foreground/60'
-      if (index < typedText.length) {
-        if (mistakePositions.includes(index)) {
-          className = 'bg-red-500/20 text-red-600 dark:text-red-400'
-        } else {
-          className = 'text-foreground'
-        }
-      } else if (index === cursorPosition) {
-        className = 'text-foreground'
-      }
+  const renderText = () => {
+    const result = []
 
-      elements.push(
-        <span key={index} className={className}>
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      )
-    })
+    // Render typed characters (correct and incorrect)
+    for (let i = 0; i < typedText.length; i++) {
+      const typedChar = typedText[i]
+      const correctChar = text[i]
+      const isCorrect = typedChar === correctChar
 
-    if (cursorPosition >= text.length) {
-      elements.push(
-        <span key="cursor-end" className={getCursorStyle()} />
+      result.push(
+        <span key={`typed-${i}`} className={isCorrect ? "text-green-600" : "bg-red-200 text-red-700"}>
+          {typedChar}
+        </span>,
       )
     }
 
-    return elements
+    // Add cursor at current position
+    if (typedText.length < text.length) {
+      result.push(<span key="cursor">{getCursorElement()}</span>)
+    }
+
+    // Render remaining untyped characters
+    for (let i = typedText.length; i < text.length; i++) {
+      result.push(
+        <span key={`untyped-${i}`} className="text-gray-400">
+          {text[i]}
+        </span>,
+      )
+    }
+
+    return result
   }
 
-  const handleAreaClick = () => {
-    inputRef.current?.focus()
-  }
-
-  const progress = text.length > 0 ? Math.round((typedText.length / text.length) * 100) : 0
+  const currentMistakes = getCurrentMistakeCount(typedText)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h2 className="text-xl font-semibold">{defaultBook.chapters[currentChapter].title}</h2>
-          <p className="text-sm text-muted-foreground">
-            Page {currentPage + 1} of {defaultBook.chapters[currentChapter].pages.length}
-            {typedText.length > 0 && ` — ${progress}% complete`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">{defaultBook.chapters[currentChapter].title}</h2>
+        <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigatePage('prev')}
+            onClick={() => navigatePage("prev")}
             disabled={currentChapter === 0 && currentPage === 0}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Select value={currentChapter.toString()} onValueChange={handleChapterChange}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Chapter" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select chapter" />
             </SelectTrigger>
             <SelectContent>
               {defaultBook.chapters.map((chapter, index) => (
@@ -223,8 +242,8 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
             </SelectContent>
           </Select>
           <Select value={currentPage.toString()} onValueChange={handlePageChange}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Page" />
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select page" />
             </SelectTrigger>
             <SelectContent>
               {defaultBook.chapters[currentChapter].pages.map((_, index) => (
@@ -237,9 +256,11 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigatePage('next')}
-            disabled={currentChapter === defaultBook.chapters.length - 1 &&
-                      currentPage === defaultBook.chapters[currentChapter].pages.length - 1}
+            onClick={() => navigatePage("next")}
+            disabled={
+              currentChapter === defaultBook.chapters.length - 1 &&
+              currentPage === defaultBook.chapters[currentChapter].pages.length - 1
+            }
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -247,45 +268,44 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
         </div>
       </div>
 
-      <div className="relative">
-        <div className="h-1 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value=""
-          onInput={handleInput}
-          onKeyDown={handleKeyDown}
-          className="absolute opacity-0 w-0 h-0 pointer-events-none"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-        />
+      <div className="relative border rounded min-h-[200px] p-4 bg-white">
+        {/* Text Display Layer */}
         <div
-          onClick={handleAreaClick}
-          className="relative border rounded-lg p-6 min-h-[240px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background cursor-text bg-card leading-relaxed selection:bg-primary/20 whitespace-pre-wrap break-words"
+          ref={textDisplayRef}
+          className="absolute inset-4 whitespace-pre-wrap pointer-events-none z-10"
           style={{
             fontSize: `${settings.fontSize}px`,
             fontFamily: settings.fontType,
-            color: settings.fontColor !== '#000000' ? settings.fontColor : undefined,
+            lineHeight: "1.5",
+            color: settings.fontColor,
           }}
-          tabIndex={-1}
         >
           {renderText()}
         </div>
+
+        {/* Invisible Input Layer */}
+        <textarea
+          ref={inputRef}
+          value={typedText}
+          onChange={handleInputChange}
+          className="absolute inset-4 w-full h-full bg-transparent text-transparent resize-none outline-none z-20 caret-transparent"
+          style={{
+            fontSize: `${settings.fontSize}px`,
+            fontFamily: settings.fontType,
+            lineHeight: "1.5",
+          }}
+          spellCheck={false}
+        />
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{typedText.length} / {text.length} characters</span>
-        <span>{mistakes} mistake{mistakes !== 1 ? 's' : ''}</span>
+      <div className="flex justify-between text-sm text-muted-foreground">
+        <span>
+          Progress: {typedText.length} / {text.length} characters
+        </span>
+        <div className="flex space-x-4">
+          <span>Current Mistakes: {currentMistakes}</span>
+          <span>Total Mistakes: {totalMistakes}</span>
+        </div>
       </div>
     </div>
   )
