@@ -18,7 +18,7 @@ export default function TypingApp() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Typing App</h1>
+      <h1 className="text-3xl font-bold mb-4">Typing Tool</h1>
       <Tabs defaultValue="typing">
         <TabsList>
           <TabsTrigger value="typing">Typing</TabsTrigger>
