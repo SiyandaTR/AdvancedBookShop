@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ThemeProvider } from "@/components/theme-provider"
 import {
   BookOpen,
   FileText,
@@ -22,13 +21,7 @@ import {
 
 export default function LandingPage() {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
         {/* Header */}
         <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -207,6 +200,5 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
-    </ThemeProvider>
   )
 }
