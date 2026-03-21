@@ -23,7 +23,7 @@ export default async function ConfirmPage({
     })
 
     if (!error) {
-      redirect("/")
+      redirect("/app")
     }
   }
 
