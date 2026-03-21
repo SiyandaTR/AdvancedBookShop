@@ -21,7 +21,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
   const [totalMistakes, setTotalMistakes] = useState(0)
   const [settings, setSettings] = useState({
     fontSize: 16,
-    fontColor: "#000000",
+    fontColor: "",
     fontType: "Arial",
     cursorStyle: "line",
     readingMode: false,
@@ -131,7 +131,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
       case "line":
         return (
           <span
-            className="inline-block w-0.5 bg-black animate-pulse align-baseline"
+            className="inline-block w-0.5 bg-foreground animate-pulse align-baseline"
             style={{
               ...baseStyle,
               height: "1em",
@@ -142,7 +142,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
       case "block":
         return (
           <span
-            className="inline-block bg-black bg-opacity-30 animate-pulse"
+            className="inline-block bg-foreground/30 animate-pulse"
             style={{
               ...baseStyle,
               width: "0.5em",
@@ -156,7 +156,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
       case "underline":
         return (
           <span
-            className="inline-block border-b-2 border-black animate-pulse"
+            className="inline-block border-b-2 border-foreground animate-pulse"
             style={{
               ...baseStyle,
               width: "0.5em",
@@ -170,7 +170,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
       default:
         return (
           <span
-            className="inline-block w-0.5 bg-black animate-pulse align-baseline"
+            className="inline-block w-0.5 bg-foreground animate-pulse align-baseline"
             style={{
               ...baseStyle,
               height: "1em",
@@ -191,7 +191,14 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
       const isCorrect = typedChar === correctChar
 
       result.push(
-        <span key={`typed-${i}`} className={isCorrect ? "text-green-600" : "bg-red-200 text-red-700"}>
+        <span
+          key={`typed-${i}`}
+          className={
+            isCorrect
+              ? "text-green-600 dark:text-green-400"
+              : "bg-red-200 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+          }
+        >
           {typedChar}
         </span>,
       )
@@ -205,7 +212,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
     // Render remaining untyped characters
     for (let i = typedText.length; i < text.length; i++) {
       result.push(
-        <span key={`untyped-${i}`} className="text-gray-400">
+        <span key={`untyped-${i}`} className="text-muted-foreground">
           {text[i]}
         </span>,
       )
@@ -268,7 +275,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
         </div>
       </div>
 
-      <div className="relative border rounded min-h-[200px] p-4 bg-white">
+      <div className="relative border rounded min-h-[200px] p-4 bg-background">
         {/* Text Display Layer */}
         <div
           ref={textDisplayRef}
@@ -277,7 +284,7 @@ export function TypingInterface({ updateAnalytics }: TypingInterfaceProps) {
             fontSize: `${settings.fontSize}px`,
             fontFamily: settings.fontType,
             lineHeight: "1.5",
-            color: settings.fontColor,
+            color: settings.fontColor || undefined,
           }}
         >
           {renderText()}
