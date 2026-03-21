@@ -200,6 +200,11 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {!supabase && (
+            <p className="text-sm text-destructive text-center">
+              Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel environment variables.
+            </p>
+          )}
           {/* Google OAuth */}
           <Button
             variant="outline"
