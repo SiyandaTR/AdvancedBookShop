@@ -1,12 +1,1 @@
-{
-  "/_not-found/page": "app/_not-found/page.js",
-  "/admin/login/page": "app/admin/login/page.js",
-  "/api/admin/login/route": "app/api/admin/login/route.js",
-  "/api/admin/logout/route": "app/api/admin/logout/route.js",
-  "/app/page": "app/app/page.js",
-  "/auth/sign-out/page": "app/auth/sign-out/page.js",
-  "/login/page": "app/login/page.js",
-  "/auth/confirm/route": "app/auth/confirm/route.js",
-  "/page": "app/page.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js"
-}
+{}
