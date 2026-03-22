@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,7 +36,25 @@ async function extractTextFromPDF(file: File): Promise<string> {
 export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploaderProps) {
   const [pdfs, setPDFs] = useState<PDFData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingList, setIsLoadingList] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    async function loadPDFs() {
+      try {
+        const res = await fetch('/api/pdfs')
+        if (res.ok) {
+          const data = await res.json()
+          setPDFs(data)
+        }
+      } catch (error) {
+        console.error('Failed to load PDFs:', error)
+      } finally {
+        setIsLoadingList(false)
+      }
+    }
+    loadPDFs()
+  }, [])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -45,9 +63,20 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
     setIsLoading(true)
     try {
       const text = await extractTextFromPDF(file)
-      const newPDF: PDFData = { name: file.name, text }
-      setPDFs((prev) => [...prev, newPDF])
-      setCurrentPDF(newPDF)
+
+      const res = await fetch('/api/pdfs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file.name, text }),
+      })
+
+      if (res.ok) {
+        const saved: PDFData = await res.json()
+        setPDFs((prev) => [saved, ...prev])
+        setCurrentPDF(saved)
+      } else {
+        console.error('Failed to save PDF:', await res.text())
+      }
     } catch (error) {
       console.error('Failed to parse PDF:', error)
     } finally {
@@ -58,10 +87,16 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
     }
   }
 
-  const handleRemove = (index: number) => {
-    const removed = pdfs[index]
+  const handleRemove = async (pdf: PDFData, index: number) => {
+    if (pdf.id) {
+      try {
+        await fetch(`/api/pdfs/${pdf.id}`, { method: 'DELETE' })
+      } catch (error) {
+        console.error('Failed to delete PDF:', error)
+      }
+    }
     setPDFs((prev) => prev.filter((_, i) => i !== index))
-    if (currentPDF?.name === removed.name) {
+    if (currentPDF?.id === pdf.id || currentPDF?.name === pdf.name) {
       onRemovePDF()
     }
   }
@@ -98,7 +133,13 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
         </CardContent>
       </Card>
 
-      {pdfs.length > 0 && (
+      {isLoadingList ? (
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      ) : pdfs.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Uploaded Files</CardTitle>
@@ -106,9 +147,9 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
           <CardContent className="space-y-2">
             {pdfs.map((pdf, index) => (
               <div
-                key={index}
+                key={pdf.id ?? index}
                 className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                  currentPDF?.name === pdf.name
+                  currentPDF?.id === pdf.id
                     ? 'bg-primary/10 border-primary'
                     : 'bg-card hover:bg-muted/50'
                 }`}
@@ -119,17 +160,17 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
-                    variant={currentPDF?.name === pdf.name ? 'secondary' : 'outline'}
+                    variant={currentPDF?.id === pdf.id ? 'secondary' : 'outline'}
                     size="sm"
                     onClick={() => setCurrentPDF(pdf)}
-                    disabled={currentPDF?.name === pdf.name}
+                    disabled={currentPDF?.id === pdf.id}
                   >
-                    {currentPDF?.name === pdf.name ? 'Selected' : 'Select'}
+                    {currentPDF?.id === pdf.id ? 'Selected' : 'Select'}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRemove(index)}
+                    onClick={() => handleRemove(pdf, index)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -139,7 +180,7 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
             ))}
           </CardContent>
         </Card>
-      )}
+      ) : null}
     </div>
   )
 }

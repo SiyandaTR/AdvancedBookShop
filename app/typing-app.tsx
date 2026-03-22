@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { BookOpen, FileText, BarChart3, LogOut } from 'lucide-react'
 
 export interface PDFData {
+  id?: string
   name: string
   text: string
 }
