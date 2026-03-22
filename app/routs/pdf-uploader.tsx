@@ -4,12 +4,12 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileText, Trash2, Loader2 } from 'lucide-react'
+import { Upload, FileText, Trash2, Loader2, BookOpen } from 'lucide-react'
 import type { PDFData } from '../typing-app'
 
 interface PDFUploaderProps {
   currentPDF: PDFData | null
-  setCurrentPDF: (pdf: PDFData) => void
+  onPDFSelect: (pdf: PDFData) => void
   onRemovePDF: () => void
 }
 
@@ -33,7 +33,7 @@ async function extractTextFromPDF(file: File): Promise<string> {
   return fullText.trim()
 }
 
-export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploaderProps) {
+export function PDFUploader({ currentPDF, onPDFSelect, onRemovePDF }: PDFUploaderProps) {
   const [pdfs, setPDFs] = useState<PDFData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingList, setIsLoadingList] = useState(true)
@@ -73,7 +73,7 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
       if (res.ok) {
         const saved: PDFData = await res.json()
         setPDFs((prev) => [saved, ...prev])
-        setCurrentPDF(saved)
+        onPDFSelect(saved)
       } else {
         console.error('Failed to save PDF:', await res.text())
       }
@@ -160,12 +160,12 @@ export function PDFUploader({ currentPDF, setCurrentPDF, onRemovePDF }: PDFUploa
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
-                    variant={currentPDF?.id === pdf.id ? 'secondary' : 'outline'}
+                    variant={currentPDF?.id === pdf.id ? 'secondary' : 'default'}
                     size="sm"
-                    onClick={() => setCurrentPDF(pdf)}
-                    disabled={currentPDF?.id === pdf.id}
+                    onClick={() => onPDFSelect(pdf)}
                   >
-                    {currentPDF?.id === pdf.id ? 'Selected' : 'Select'}
+                    <BookOpen className="h-3 w-3 mr-1" />
+                    {currentPDF?.id === pdf.id ? 'Typing...' : 'Start Typing'}
                   </Button>
                   <Button
                     variant="ghost"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -16,14 +16,124 @@ export interface PDFData {
   text: string
 }
 
+export interface SessionData {
+  id: string
+  wpm: number
+  accuracy: number
+  source: string
+  chars_typed: number
+  time_spent_seconds: number
+  correct_keystrokes: number
+  total_mistakes: number
+  completed_at: string
+}
+
+const ANALYTICS_CACHE_KEY = "typing_analytics_cache"
+
+function loadCachedSessions(): SessionData[] {
+  if (typeof window === "undefined") return []
+  try {
+    const cached = localStorage.getItem(ANALYTICS_CACHE_KEY)
+    if (cached) return JSON.parse(cached)
+  } catch {
+    // Ignore corrupt cache
+  }
+  return []
+}
+
+function saveSessionsToCache(sessions: SessionData[]) {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(sessions))
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export default function TypingApp({ email }: { email: string }) {
   const [currentPDF, setCurrentPDF] = useState<PDFData | null>(null)
   const [wpm, setWpm] = useState(0)
   const [accuracy, setAccuracy] = useState(100)
+  const [sessions, setSessions] = useState<SessionData[]>([])
+  const [activeTab, setActiveTab] = useState("typing")
+  const hasFetched = useRef(false)
 
-  const updateAnalytics = (newWpm: number, newAccuracy: number) => {
-    setWpm(newWpm)
-    setAccuracy(newAccuracy)
+  const fetchSessions = useCallback(async () => {
+    const cached = loadCachedSessions()
+    if (cached.length > 0) {
+      setSessions(cached)
+    }
+
+    try {
+      const res = await fetch("/api/analytics")
+      if (res.ok) {
+        const data = await res.json()
+        setSessions(data)
+        saveSessionsToCache(data)
+      }
+    } catch {
+      // Use cached data if API fails
+      if (cached.length === 0) {
+        setSessions([])
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hasFetched.current) {
+      hasFetched.current = true
+      fetchSessions()
+    }
+  }, [fetchSessions])
+
+  const handlePDFSelect = (pdf: PDFData) => {
+    setCurrentPDF(pdf)
+    setActiveTab("typing")
+  }
+
+  const handleRemovePDF = () => {
+    setCurrentPDF(null)
+  }
+
+  const updateAnalytics = async (metrics: {
+    wpm: number
+    accuracy: number
+    charsTyped: number
+    timeSpentSeconds: number
+    correctKeystrokes: number
+    totalMistakes: number
+  }) => {
+    setWpm(metrics.wpm)
+    setAccuracy(metrics.accuracy)
+
+    const source = currentPDF ? currentPDF.name : "default"
+    const payload = {
+      wpm: metrics.wpm,
+      accuracy: metrics.accuracy,
+      source,
+      chars_typed: metrics.charsTyped,
+      time_spent_seconds: metrics.timeSpentSeconds,
+      correct_keystrokes: metrics.correctKeystrokes,
+      total_mistakes: metrics.totalMistakes,
+    }
+
+    try {
+      const res = await fetch("/api/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        const newSession = await res.json()
+        setSessions((prev) => {
+          const updated = [newSession, ...prev]
+          saveSessionsToCache(updated)
+          return updated
+        })
+      }
+    } catch {
+      // Saving is best-effort
+    }
   }
 
   return (
@@ -47,7 +157,7 @@ export default function TypingApp({ email }: { email: string }) {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-6">
-        <Tabs defaultValue="typing" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="typing" className="gap-1.5">
               <BookOpen className="h-4 w-4" />
@@ -63,13 +173,22 @@ export default function TypingApp({ email }: { email: string }) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="typing" className="mt-0">
-            <TypingInterface updateAnalytics={updateAnalytics} pdfText={currentPDF?.text ?? null} />
+            <TypingInterface
+              updateAnalytics={updateAnalytics}
+              pdfText={currentPDF?.text ?? null}
+              pdfName={currentPDF?.name ?? null}
+              onClearPDF={handleRemovePDF}
+            />
           </TabsContent>
           <TabsContent value="pdfs" className="mt-0">
-            <PDFUploader currentPDF={currentPDF} setCurrentPDF={setCurrentPDF} onRemovePDF={() => setCurrentPDF(null)} />
+            <PDFUploader
+              currentPDF={currentPDF}
+              onPDFSelect={handlePDFSelect}
+              onRemovePDF={handleRemovePDF}
+            />
           </TabsContent>
           <TabsContent value="analytics" className="mt-0">
-            <AnalyticsPanel wpm={wpm} accuracy={accuracy} />
+            <AnalyticsPanel wpm={wpm} accuracy={accuracy} sessions={sessions} />
           </TabsContent>
         </Tabs>
       </main>

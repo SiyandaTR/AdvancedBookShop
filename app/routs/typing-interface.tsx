@@ -5,12 +5,23 @@ import { useState, useEffect, useRef } from "react"
 import { defaultBook } from "../data/default-book"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { SettingsPopup } from "./settings-popup"
 
+interface TypingMetrics {
+  wpm: number
+  accuracy: number
+  charsTyped: number
+  timeSpentSeconds: number
+  correctKeystrokes: number
+  totalMistakes: number
+}
+
 interface TypingInterfaceProps {
-  updateAnalytics: (wpm: number, accuracy: number) => void
+  updateAnalytics: (metrics: TypingMetrics) => void
   pdfText?: string | null
+  pdfName?: string | null
+  onClearPDF?: () => void
 }
 
 function splitTextIntoPages(text: string, maxChars = 1500): string[] {
@@ -37,13 +48,14 @@ function splitTextIntoPages(text: string, maxChars = 1500): string[] {
   return pages.length > 0 ? pages : [text]
 }
 
-export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfaceProps) {
+export function TypingInterface({ updateAnalytics, pdfText, pdfName, onClearPDF }: TypingInterfaceProps) {
   const [currentChapter, setCurrentChapter] = useState(0)
   const [currentPage, setCurrentPage] = useState(0)
   const [text, setText] = useState("")
   const [typedText, setTypedText] = useState("")
   const [startTime, setStartTime] = useState<number | null>(null)
   const [totalMistakes, setTotalMistakes] = useState(0)
+  const [correctKeystrokes, setCorrectKeystrokes] = useState(0)
   const [settings, setSettings] = useState({
     fontSize: 16,
     fontColor: "",
@@ -67,6 +79,7 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
     setTypedText("")
     setStartTime(null)
     setTotalMistakes(0)
+    setCorrectKeystrokes(0)
   }, [pdfText])
 
   useEffect(() => {
@@ -78,6 +91,7 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
     setTypedText("")
     setStartTime(null)
     setTotalMistakes(0)
+    setCorrectKeystrokes(0)
   }, [currentChapter, currentPage, pdfText])
 
   useEffect(() => {
@@ -86,7 +100,20 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
     }
   }, [])
 
+  const isCharPunctuation = (char: string): boolean => {
+    return /[^\w\s]/.test(char)
+  }
+
+  const charsMatch = (typed: string, expected: string): boolean => {
+    if (settings.ignoreCapitalization) {
+      return typed.toLowerCase() === expected.toLowerCase()
+    }
+    return typed === expected
+  }
+
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (settings.readingMode) return
+
     const newValue = event.target.value
 
     if (!startTime) {
@@ -97,11 +124,39 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
     if (newValue.length > typedText.length) {
       const newCharIndex = newValue.length - 1
       const newChar = newValue[newCharIndex]
-      const correctChar = text[newCharIndex]
 
-      // Only count as mistake if the new character is wrong
-      if (newChar !== correctChar) {
-        setTotalMistakes((prev) => prev + 1)
+      // Map input index to text index, accounting for auto-skipped punctuation
+      let textIndex = 0
+      let typedCount = 0
+      while (typedCount < newCharIndex && textIndex < text.length) {
+        if (settings.skipPunctuation && isCharPunctuation(text[textIndex])) {
+          textIndex++
+        } else {
+          textIndex++
+          typedCount++
+        }
+      }
+
+      if (textIndex < text.length) {
+        // Skip punctuation characters automatically
+        if (settings.skipPunctuation && isCharPunctuation(text[textIndex])) {
+          setTypedText(typedText + newChar)
+          return
+        }
+
+        const correctChar = text[textIndex]
+        const isCorrect = charsMatch(newChar, correctChar)
+
+        if (!isCorrect) {
+          setTotalMistakes((prev) => prev + 1)
+
+          if (settings.stopCursorAfterMistake) {
+            setTypedText(newValue)
+            return
+          }
+        } else {
+          setCorrectKeystrokes((prev) => prev + 1)
+        }
       }
     }
 
@@ -110,22 +165,29 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
     // Check if typing is complete
     if (newValue.length >= text.length) {
       const endTime = Date.now()
-      const timeElapsed = (endTime - (startTime || endTime)) / 60000 // in minutes
+      const timeSpentSeconds = Math.round((endTime - (startTime || endTime)) / 1000)
+      const timeElapsedMinutes = timeSpentSeconds / 60
       const wordsTyped = text.trim().split(/\s+/).length
-      const wpm = Math.round(wordsTyped / timeElapsed)
+      const wpm = timeElapsedMinutes > 0 ? Math.round(wordsTyped / timeElapsedMinutes) : 0
 
-      // Calculate current mistakes (characters that are currently wrong)
       const currentMistakes = getCurrentMistakeCount(newValue)
       const accuracy = Math.round(((text.length - currentMistakes) / text.length) * 100)
 
-      updateAnalytics(wpm, accuracy)
+      updateAnalytics({
+        wpm,
+        accuracy,
+        charsTyped: text.length,
+        timeSpentSeconds,
+        correctKeystrokes,
+        totalMistakes,
+      })
     }
   }
 
   const getCurrentMistakeCount = (currentTypedText: string) => {
     let mistakes = 0
     for (let i = 0; i < currentTypedText.length && i < text.length; i++) {
-      if (currentTypedText[i] !== text[i]) {
+      if (!charsMatch(currentTypedText[i], text[i])) {
         mistakes++
       }
     }
@@ -230,13 +292,21 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
   }
 
   const renderText = () => {
+    if (settings.readingMode) {
+      return (
+        <div className="whitespace-pre-wrap leading-relaxed">
+          {text}
+        </div>
+      )
+    }
+
     const result = []
 
     // Render typed characters (correct and incorrect)
     for (let i = 0; i < typedText.length; i++) {
       const typedChar = typedText[i]
       const correctChar = text[i]
-      const isCorrect = typedChar === correctChar
+      const isCorrect = charsMatch(typedChar, correctChar)
 
       result.push(
         <span
@@ -270,13 +340,22 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
   }
 
   const currentMistakes = getCurrentMistakeCount(typedText)
+  const progressPercent = text.length > 0 ? Math.round((typedText.length / text.length) * 100) : 0
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">
-          {isPDFMode ? 'PDF Document' : defaultBook.chapters[currentChapter].title}
-        </h2>
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-2xl font-bold truncate">
+            {isPDFMode && pdfName ? pdfName : defaultBook.chapters[currentChapter].title}
+          </h2>
+          {isPDFMode && onClearPDF && (
+            <Button variant="ghost" size="sm" onClick={onClearPDF} className="shrink-0 text-muted-foreground">
+              <X className="h-4 w-4 mr-1" />
+              Clear PDF
+            </Button>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
@@ -364,7 +443,8 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
           ref={inputRef}
           value={typedText}
           onChange={handleInputChange}
-          className="absolute inset-4 w-full h-full bg-transparent text-transparent resize-none outline-none z-20 caret-transparent"
+          disabled={settings.readingMode}
+          className={`absolute inset-4 w-full h-full bg-transparent text-transparent resize-none outline-none z-20 caret-transparent ${settings.readingMode ? 'hidden' : ''}`}
           style={{
             fontSize: `${settings.fontSize}px`,
             fontFamily: settings.fontType,
@@ -375,13 +455,19 @@ export function TypingInterface({ updateAnalytics, pdfText }: TypingInterfacePro
       </div>
 
       <div className="flex justify-between text-sm text-muted-foreground">
-        <span>
-          Progress: {typedText.length} / {text.length} characters
-        </span>
-        <div className="flex space-x-4">
-          <span>Current Mistakes: {currentMistakes}</span>
-          <span>Total Mistakes: {totalMistakes}</span>
-        </div>
+        {settings.readingMode ? (
+          <span>Reading Mode — Text displayed for reading only</span>
+        ) : (
+          <span>
+            Progress: {typedText.length} / {text.length} characters ({progressPercent}%)
+          </span>
+        )}
+        {!settings.readingMode && (
+          <div className="flex space-x-4">
+            <span>Errors: {currentMistakes}</span>
+            <span>Correct: {correctKeystrokes}</span>
+          </div>
+        )}
       </div>
     </div>
   )

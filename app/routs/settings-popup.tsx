@@ -21,7 +21,7 @@ interface SettingsPopupProps {
 }
 
 export function SettingsPopup({ settings, setSettings }: SettingsPopupProps) {
-  const handleChange = (key: keyof SettingsPopupProps['settings'], value: any) => {
+  const handleChange = (key: keyof SettingsPopupProps['settings'], value: string | number | boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 

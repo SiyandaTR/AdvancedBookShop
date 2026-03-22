@@ -1,11 +1,12 @@
 import crypto from "crypto"
 
-export const ADMIN_EMAIL = "siyandam097@gmail.com"
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || ""
 
-const SALT = "f5a78c6049e91d0ca51cef7059f113c4"
-const HASH = "a4aa04b17398dca04491f829c9dcbc1dd1dd9a56443aea17db262886476457fa"
+const SALT = process.env.ADMIN_PASSWORD_SALT || ""
+const HASH = process.env.ADMIN_PASSWORD_HASH || ""
 
 export function verifyAdminPassword(password: string): boolean {
+  if (!SALT || !HASH) return false
   const hash = crypto.createHmac("sha256", SALT).update(password).digest("hex")
   return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(HASH))
 }
