@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
@@ -15,26 +14,34 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9">
-        <Sun className="h-4 w-4" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <button className="w-9 h-9 rounded-full border border-[var(--border)] flex items-center justify-center opacity-50">
+        <span className="text-xs font-body">○</span>
+      </button>
     )
   }
 
   const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches)
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9 relative overflow-hidden"
+    <motion.button
+      className="w-9 h-9 rounded-full border border-[var(--border)] flex items-center justify-center overflow-hidden hover:bg-[var(--surface-hover)] transition-colors"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <Sun className={`h-4 w-4 absolute transition-all duration-300 ${isDark ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"}`} />
-      <Moon className={`h-4 w-4 absolute transition-all duration-300 ${isDark ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"}`} />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={isDark ? "dark" : "light"}
+          initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+          exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+          transition={{ duration: 0.2 }}
+          className="text-xs font-body"
+        >
+          {isDark ? "○" : "●"}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   )
 }

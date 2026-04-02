@@ -1,14 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { PDFUploader } from './routs/pdf-uploader'
-import { TypingInterface } from './routs/typing-interface'
-import { AnalyticsPanel } from './routs/analytics-panel'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { BookOpen, FileText, BarChart3, LogOut } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from "react"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import { PDFUploader } from "./routs/pdf-uploader"
+import { TypingInterface } from "./routs/typing-interface"
+import { AnalyticsPanel } from "./routs/analytics-panel"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { BookOpen, FileText, BarChart3, LogOut } from "lucide-react"
 
 export interface PDFData {
   id?: string
@@ -35,9 +34,7 @@ function loadCachedSessions(): SessionData[] {
   try {
     const cached = localStorage.getItem(ANALYTICS_CACHE_KEY)
     if (cached) return JSON.parse(cached)
-  } catch {
-    // Ignore corrupt cache
-  }
+  } catch {}
   return []
 }
 
@@ -45,9 +42,19 @@ function saveSessionsToCache(sessions: SessionData[]) {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(ANALYTICS_CACHE_KEY, JSON.stringify(sessions))
-  } catch {
-    // Ignore storage errors
-  }
+  } catch {}
+}
+
+const tabs = [
+  { id: "typing", label: "Type", icon: BookOpen },
+  { id: "pdfs", label: "PDFs", icon: FileText },
+  { id: "analytics", label: "Stats", icon: BarChart3 },
+]
+
+const pageVariants = {
+  initial: { opacity: 0, y: 10, filter: "blur(4px)" },
+  animate: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } },
+  exit: { opacity: 0, y: -6, filter: "blur(4px)", transition: { duration: 0.2 } },
 }
 
 export default function TypingApp({ email }: { email: string }) {
@@ -60,10 +67,7 @@ export default function TypingApp({ email }: { email: string }) {
 
   const fetchSessions = useCallback(async () => {
     const cached = loadCachedSessions()
-    if (cached.length > 0) {
-      setSessions(cached)
-    }
-
+    if (cached.length > 0) setSessions(cached)
     try {
       const res = await fetch("/api/analytics")
       if (res.ok) {
@@ -72,10 +76,7 @@ export default function TypingApp({ email }: { email: string }) {
         saveSessionsToCache(data)
       }
     } catch {
-      // Use cached data if API fails
-      if (cached.length === 0) {
-        setSessions([])
-      }
+      if (cached.length === 0) setSessions([])
     }
   }, [])
 
@@ -91,37 +92,23 @@ export default function TypingApp({ email }: { email: string }) {
     setActiveTab("typing")
   }
 
-  const handleRemovePDF = () => {
-    setCurrentPDF(null)
-  }
+  const handleRemovePDF = () => setCurrentPDF(null)
 
   const updateAnalytics = async (metrics: {
-    wpm: number
-    accuracy: number
-    charsTyped: number
-    timeSpentSeconds: number
-    correctKeystrokes: number
-    totalMistakes: number
+    wpm: number; accuracy: number; charsTyped: number; timeSpentSeconds: number; correctKeystrokes: number; totalMistakes: number
   }) => {
     setWpm(metrics.wpm)
     setAccuracy(metrics.accuracy)
-
     const source = currentPDF ? currentPDF.name : "default"
-    const payload = {
-      wpm: metrics.wpm,
-      accuracy: metrics.accuracy,
-      source,
-      chars_typed: metrics.charsTyped,
-      time_spent_seconds: metrics.timeSpentSeconds,
-      correct_keystrokes: metrics.correctKeystrokes,
-      total_mistakes: metrics.totalMistakes,
-    }
-
     try {
       const res = await fetch("/api/analytics", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          wpm: metrics.wpm, accuracy: metrics.accuracy, source,
+          chars_typed: metrics.charsTyped, time_spent_seconds: metrics.timeSpentSeconds,
+          correct_keystrokes: metrics.correctKeystrokes, total_mistakes: metrics.totalMistakes,
+        }),
       })
       if (res.ok) {
         const newSession = await res.json()
@@ -131,73 +118,76 @@ export default function TypingApp({ email }: { email: string }) {
           return updated
         })
       }
-    } catch {
-      // Saving is best-effort
-    }
+    } catch {}
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold tracking-tight">Advanced Book Shop</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">{email}</span>
+    <motion.div className="min-h-screen flex flex-col" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      {/* Header */}
+      <motion.header
+        className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]/90 backdrop-blur-sm"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <div className="max-w-5xl mx-auto flex h-14 items-center justify-between px-6">
+          <Link href="/app" className="font-heading text-lg font-bold tracking-tight hover:opacity-70 transition-opacity">
+            typeloft
+          </Link>
+
+          <div className="flex items-center gap-1">
+            <nav className="flex items-center border border-[var(--border)] rounded-full p-0.5 mr-3">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-medium transition-colors ${
+                    activeTab === tab.id ? "text-[var(--accent-fg)]" : "text-fg-muted hover:text-[var(--fg)]"
+                  }`}
+                >
+                  {activeTab === tab.id && (
+                    <motion.div layoutId="active-tab" className="absolute inset-0 bg-[var(--accent)] rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <tab.icon className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </span>
+                </button>
+              ))}
+            </nav>
+            <span className="text-xs text-fg-subtle font-body hidden md:inline mr-2">{email}</span>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/auth/sign-out">
-                <LogOut className="h-4 w-4" />
-              </Link>
-            </Button>
+            <Link href="/auth/sign-out" className="w-9 h-9 rounded-full border border-[var(--border)] flex items-center justify-center hover:bg-[var(--surface-hover)] transition-colors">
+              <LogOut className="h-3.5 w-3.5 text-fg-muted" />
+            </Link>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="typing" className="gap-1.5">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Typing</span>
-            </TabsTrigger>
-            <TabsTrigger value="pdfs" className="gap-1.5">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">PDFs</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1.5">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="typing" className="mt-0">
-            <TypingInterface
-              updateAnalytics={updateAnalytics}
-              pdfText={currentPDF?.text ?? null}
-              pdfName={currentPDF?.name ?? null}
-              onClearPDF={handleRemovePDF}
-            />
-          </TabsContent>
-          <TabsContent value="pdfs" className="mt-0">
-            <PDFUploader
-              currentPDF={currentPDF}
-              onPDFSelect={handlePDFSelect}
-              onRemovePDF={handleRemovePDF}
-            />
-          </TabsContent>
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsPanel wpm={wpm} accuracy={accuracy} sessions={sessions} />
-          </TabsContent>
-        </Tabs>
+      {/* Content */}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
+        <AnimatePresence mode="wait">
+          {activeTab === "typing" && (
+            <motion.div key="typing" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+              <TypingInterface updateAnalytics={updateAnalytics} pdfText={currentPDF?.text ?? null} pdfName={currentPDF?.name ?? null} onClearPDF={handleRemovePDF} />
+            </motion.div>
+          )}
+          {activeTab === "pdfs" && (
+            <motion.div key="pdfs" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+              <PDFUploader currentPDF={currentPDF} onPDFSelect={handlePDFSelect} onRemovePDF={handleRemovePDF} />
+            </motion.div>
+          )}
+          {activeTab === "analytics" && (
+            <motion.div key="analytics" variants={pageVariants} initial="initial" animate="animate" exit="exit">
+              <AnalyticsPanel wpm={wpm} accuracy={accuracy} sessions={sessions} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
-      <footer className="border-t py-4">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          Advanced Book Shop — Typing Practice Tool
-        </div>
+      <footer className="border-t border-[var(--border)] py-4">
+        <div className="max-w-5xl mx-auto px-6 text-center text-xs text-fg-subtle font-body">typeloft</div>
       </footer>
-    </div>
+    </motion.div>
   )
 }

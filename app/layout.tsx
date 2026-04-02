@@ -3,8 +3,8 @@ import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Advanced Book Shop — Typing Tool',
-  description: 'Practice typing with books and PDFs',
+  title: 'Typeloft — Type. Read. Improve.',
+  description: 'A minimal typing practice app with PDF management',
 }
 
 export default function RootLayout({
@@ -14,10 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen antialiased">
+      <body className="min-h-screen">
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
           disableTransitionOnChange
         >
           {children}

@@ -1,139 +1,142 @@
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Settings } from 'lucide-react'
+"use client"
+
+import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Settings } from "lucide-react"
 
 interface SettingsPopupProps {
   settings: {
-    fontSize: number;
-    fontColor: string;
-    fontType: string;
-    cursorStyle: string;
-    readingMode: boolean;
-    ignoreCapitalization: boolean;
-    skipPunctuation: boolean;
-    stopCursorAfterMistake: boolean;
-  };
-  setSettings: React.Dispatch<React.SetStateAction<SettingsPopupProps['settings']>>;
+    fontSize: number; fontColor: string; fontType: string; cursorStyle: string
+    readingMode: boolean; ignoreCapitalization: boolean; skipPunctuation: boolean; stopCursorAfterMistake: boolean
+  }
+  setSettings: React.Dispatch<React.SetStateAction<SettingsPopupProps["settings"]>>
 }
 
 export function SettingsPopup({ settings, setSettings }: SettingsPopupProps) {
-  const handleChange = (key: keyof SettingsPopupProps['settings'], value: string | number | boolean) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
+  const [open, setOpen] = useState(false)
+
+  const handleChange = (key: keyof SettingsPopupProps["settings"], value: string | number | boolean) => {
+    setSettings((prev) => ({ ...prev, [key]: value }))
   }
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fontSize" className="text-right">
-              Font Size
-            </Label>
-            <Input
-              id="fontSize"
-              type="number"
-              value={settings.fontSize}
-              onChange={(e) => handleChange('fontSize', Number(e.target.value))}
-              className="col-span-3"
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-7 h-7 rounded-full flex items-center justify-center border border-[var(--border)] hover:bg-[var(--surface-hover)] hover:border-[var(--fg-subtle)] transition-all"
+      >
+        <Settings className="h-3.5 w-3.5 text-fg-muted" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/20 z-[100]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fontColor" className="text-right">
-              Font Color
-            </Label>
-            <Input
-              id="fontColor"
-              type="color"
-              value={settings.fontColor}
-              onChange={(e) => handleChange('fontColor', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="fontType" className="text-right">
-              Font Type
-            </Label>
-            <Select
-              value={settings.fontType}
-              onValueChange={(value) => handleChange('fontType', value)}
+            <motion.div
+              className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select font type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Arial">Arial</SelectItem>
-                <SelectItem value="Helvetica">Helvetica</SelectItem>
-                <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                <SelectItem value="Courier">Courier</SelectItem>
-                <SelectItem value="Verdana">Verdana</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cursorStyle" className="text-right">
-              Cursor Style
-            </Label>
-            <Select
-              value={settings.cursorStyle}
-              onValueChange={(value) => handleChange('cursorStyle', value)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select cursor style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="line">Line</SelectItem>
-                <SelectItem value="block">Block</SelectItem>
-                <SelectItem value="underline">Underline</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="readingMode"
-              checked={settings.readingMode}
-              onCheckedChange={(checked) => handleChange('readingMode', checked)}
-            />
-            <Label htmlFor="readingMode">Reading Mode</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="ignoreCapitalization"
-              checked={settings.ignoreCapitalization}
-              onCheckedChange={(checked) => handleChange('ignoreCapitalization', checked)}
-            />
-            <Label htmlFor="ignoreCapitalization">Ignore Capitalization</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="skipPunctuation"
-              checked={settings.skipPunctuation}
-              onCheckedChange={(checked) => handleChange('skipPunctuation', checked)}
-            />
-            <Label htmlFor="skipPunctuation">Skip Punctuation</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="stopCursorAfterMistake"
-              checked={settings.stopCursorAfterMistake}
-              onCheckedChange={(checked) => handleChange('stopCursorAfterMistake', checked)}
-            />
-            <Label htmlFor="stopCursorAfterMistake">Stop Cursor After Mistake</Label>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+              <motion.div
+                className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 shadow-xl"
+                initial={{ scale: 0.95, y: 10 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-heading text-lg font-bold">Settings</h3>
+                  <button onClick={() => setOpen(false)} className="text-fg-muted hover:text-[var(--fg)] transition-colors text-lg leading-none">&times;</button>
+                </div>
+
+                <div className="space-y-5">
+                  {/* Font Size */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-body text-fg-muted">Font size</label>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleChange("fontSize", Math.max(12, settings.fontSize - 1))} className="w-7 h-7 rounded-full border border-[var(--border)] flex items-center justify-center text-sm hover:bg-[var(--surface-hover)] transition-colors">−</button>
+                      <span className="text-sm font-body tabular-nums w-8 text-center">{settings.fontSize}</span>
+                      <button onClick={() => handleChange("fontSize", Math.min(28, settings.fontSize + 1))} className="w-7 h-7 rounded-full border border-[var(--border)] flex items-center justify-center text-sm hover:bg-[var(--surface-hover)] transition-colors">+</button>
+                    </div>
+                  </div>
+
+                  {/* Font Type */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-body text-fg-muted">Font</label>
+                    <select
+                      value={settings.fontType}
+                      onChange={(e) => handleChange("fontType", e.target.value)}
+                      className="text-sm font-body bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 outline-none focus:border-[var(--fg-muted)]"
+                    >
+                      <option value="Roboto">Roboto</option>
+                      <option value="Rufina">Rufina</option>
+                      <option value="monospace">Monospace</option>
+                      <option value="Arial">Arial</option>
+                    </select>
+                  </div>
+
+                  {/* Cursor Style */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-body text-fg-muted">Cursor</label>
+                    <select
+                      value={settings.cursorStyle}
+                      onChange={(e) => handleChange("cursorStyle", e.target.value)}
+                      className="text-sm font-body bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3 py-1.5 outline-none focus:border-[var(--fg-muted)]"
+                    >
+                      <option value="line">Line</option>
+                      <option value="block">Block</option>
+                      <option value="underline">Underline</option>
+                    </select>
+                  </div>
+
+                  {/* Font Color */}
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-body text-fg-muted">Color</label>
+                    <input
+                      type="color"
+                      value={settings.fontColor || "#111111"}
+                      onChange={(e) => handleChange("fontColor", e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border)] cursor-pointer bg-transparent"
+                    />
+                  </div>
+
+                  <div className="border-t border-[var(--border)] pt-4 space-y-3">
+                    <ToggleRow label="Reading mode" checked={settings.readingMode} onChange={(v) => handleChange("readingMode", v)} />
+                    <ToggleRow label="Ignore caps" checked={settings.ignoreCapitalization} onChange={(v) => handleChange("ignoreCapitalization", v)} />
+                    <ToggleRow label="Skip punctuation" checked={settings.skipPunctuation} onChange={(v) => handleChange("skipPunctuation", v)} />
+                    <ToggleRow label="Stop after mistake" checked={settings.stopCursorAfterMistake} onChange={(v) => handleChange("stopCursorAfterMistake", v)} />
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 
+function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-body text-fg-muted">{label}</span>
+      <button
+        onClick={() => onChange(!checked)}
+        className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${checked ? "bg-[var(--accent)]" : "bg-[var(--border)]"}`}
+      >
+        <motion.span
+          className="absolute top-0.5 w-4 h-4 rounded-full bg-[var(--bg)] shadow-sm"
+          animate={{ left: checked ? "18px" : "2px" }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
+      </button>
+    </div>
+  )
+}

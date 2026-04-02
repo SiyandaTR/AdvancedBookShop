@@ -1,204 +1,190 @@
+"use client"
+
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { motion } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"
-import {
-  BookOpen,
-  FileText,
-  BarChart3,
-  Keyboard,
-  Upload,
-  Zap,
-  ArrowRight,
-  CheckCircle,
-} from "lucide-react"
+import * as React from "react"
+
+const stagger = {
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] } },
+}
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-        {/* Header */}
-        <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container mx-auto flex h-14 items-center justify-between px-4">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold tracking-tight">
-                Advanced Book Shop
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-              <Button variant="ghost" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/login">Get Started</Link>
-              </Button>
-            </div>
-          </div>
-        </header>
+    <div className="min-h-screen flex flex-col relative">
+      {/* Three.js Background */}
+      <ThreeScene />
 
-        {/* Hero */}
-        <section className="flex-1">
-          <div className="container mx-auto px-4 py-20 md:py-32">
-            <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-6 inline-flex items-center rounded-full border px-4 py-1.5 text-sm text-muted-foreground">
-                <Zap className="mr-2 h-3.5 w-3.5 text-primary" />
-                Practice typing with any book or PDF
-              </div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Master your typing
-                <span className="text-primary"> with books</span>
-              </h1>
-              <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-                Upload any PDF and turn it into a typing exercise. Track your
-                speed, accuracy, and progress over time.
-              </p>
-              <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <Button size="lg" asChild>
-                  <Link href="/login">
-                    Start Typing Free
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <Link href="#features">See Features</Link>
-                </Button>
-              </div>
-            </div>
+      {/* Navigation */}
+      <motion.header
+        className="relative z-50 border-b border-[var(--border)]"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="max-w-5xl mx-auto flex h-14 items-center justify-between px-6">
+          <Link href="/" className="font-heading text-lg font-bold tracking-tight hover:opacity-70 transition-opacity">
+            typeloft
+          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link href="/login" className="text-sm text-fg-muted hover:text-[var(--fg)] transition-colors font-body">
+              Sign in
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm bg-[var(--accent)] text-[var(--accent-fg)] px-4 py-1.5 rounded-full font-medium hover:opacity-90 transition-opacity font-body"
+            >
+              Start
+            </Link>
           </div>
-        </section>
+        </div>
+      </motion.header>
 
-        {/* Features */}
-        <section id="features" className="border-t bg-muted/40 py-20 md:py-28">
-          <div className="container mx-auto px-4">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Everything you need to type faster
-              </h2>
-              <p className="mt-4 text-muted-foreground">
-                Import real content, practice in a focused interface, and track
-                your improvement with detailed analytics.
-              </p>
-            </div>
-            <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Upload className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">PDF Upload</CardTitle>
-                  <CardDescription>
-                    Import any PDF and extract its text to use as typing
-                    material.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Keyboard className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Typing Practice</CardTitle>
-                  <CardDescription>
-                    Real-time feedback as you type with highlighted errors and
-                    current position.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <BarChart3 className="h-5 w-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Analytics</CardTitle>
-                  <CardDescription>
-                    Track words per minute, accuracy, and progress across
-                    sessions.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </div>
-        </section>
+      {/* Hero */}
+      <motion.section
+        className="flex-1 flex items-center justify-center relative z-10"
+        variants={stagger}
+        initial="initial"
+        animate="animate"
+      >
+        <div className="max-w-3xl mx-auto px-6 py-20 md:py-32 text-center">
+          <motion.span variants={fadeUp} className="inline-block text-xs uppercase tracking-[0.2em] text-fg-muted font-body mb-6">
+            typing · pdfs · focus
+          </motion.span>
 
-        {/* How it works */}
-        <section className="py-20 md:py-28">
-          <div className="container mx-auto px-4">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                How it works
-              </h2>
-            </div>
-            <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-              {[
-                {
-                  step: "1",
-                  title: "Upload a PDF",
-                  desc: "Drag and drop any PDF document into the app.",
-                  icon: FileText,
-                },
-                {
-                  step: "2",
-                  title: "Start typing",
-                  desc: "Follow the extracted text and type along in real time.",
-                  icon: Keyboard,
-                },
-                {
-                  step: "3",
-                  title: "Track progress",
-                  desc: "Review your WPM, accuracy, and improvement over time.",
-                  icon: BarChart3,
-                },
-              ].map((item) => (
-                <div key={item.step} className="text-center">
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-lg font-bold text-primary">
-                    {item.step}
-                  </div>
-                  <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+          <motion.h1 variants={fadeUp} className="font-heading text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[0.95]">
+            Type with
+            <br />
+            <span className="text-fg-muted">purpose.</span>
+          </motion.h1>
 
-        {/* CTA */}
-        <section className="border-t bg-muted/40 py-20 md:py-28">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to improve your typing?
-            </h2>
-            <p className="mx-auto mt-4 max-w-md text-muted-foreground">
-              Sign up for free and start practicing with your own books and
-              documents.
-            </p>
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <Button size="lg" asChild>
-                <Link href="/login">
-                  Create Free Account
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+          <motion.p variants={fadeUp} className="mt-6 text-base md:text-lg text-fg-muted max-w-md mx-auto font-body font-light leading-relaxed">
+            Upload any PDF. Practice typing from real content.
+            <br className="hidden md:block" />
+            Track your speed, accuracy, progress.
+          </motion.p>
 
-        {/* Footer */}
-        <footer className="border-t py-6">
-          <div className="container mx-auto flex items-center justify-between px-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" />
-              Advanced Book Shop
-            </div>
-            <span>&copy; {new Date().getFullYear()}</span>
+          <motion.div variants={fadeUp} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/login"
+              className="bg-[var(--accent)] text-[var(--accent-fg)] px-8 py-3 rounded-full text-sm font-medium font-body hover:opacity-90 transition-opacity"
+            >
+              Start typing free
+            </Link>
+            <a
+              href="#how"
+              className="text-sm text-fg-muted hover:text-[var(--fg)] transition-colors font-body border border-[var(--border)] px-6 py-2.5 rounded-full hover:border-[var(--fg-subtle)]"
+            >
+              How it works
+            </a>
+          </motion.div>
+
+          {/* Typing preview */}
+          <motion.div variants={fadeUp} className="mt-16 md:mt-20">
+            <TypingPreview />
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* How it works */}
+      <section id="how" className="relative z-10 border-t border-[var(--border)] py-20 md:py-28">
+        <motion.div
+          className="max-w-4xl mx-auto px-6"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={stagger}
+        >
+          <motion.h2 variants={fadeUp} className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-center mb-16">
+            Three steps. That&apos;s it.
+          </motion.h2>
+          <div className="grid md:grid-cols-3 gap-12 md:gap-8">
+            {[
+              { step: "01", title: "Upload", desc: "Drop a PDF or use built-in texts. Extract content instantly." },
+              { step: "02", title: "Type", desc: "Follow along and type in real-time with live error feedback." },
+              { step: "03", title: "Improve", desc: "Track WPM, accuracy, and growth across every session." },
+            ].map((item) => (
+              <motion.div key={item.step} variants={fadeUp} className="group">
+                <span className="text-xs font-body text-fg-subtle uppercase tracking-[0.15em]">{item.step}</span>
+                <h3 className="font-heading text-xl font-bold mt-2 mb-2 group-hover:text-fg-muted transition-colors">{item.title}</h3>
+                <p className="text-sm text-fg-muted font-body font-light leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
-        </footer>
-      </div>
+        </motion.div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative z-10 border-t border-[var(--border)] py-20 md:py-28">
+        <motion.div
+          className="max-w-md mx-auto px-6 text-center"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          variants={stagger}
+        >
+          <motion.h2 variants={fadeUp} className="font-heading text-3xl md:text-4xl font-bold tracking-tight">Ready?</motion.h2>
+          <motion.p variants={fadeUp} className="mt-3 text-fg-muted font-body font-light">Free. No setup. Start in seconds.</motion.p>
+          <motion.div variants={fadeUp} className="mt-8">
+            <Link href="/login" className="bg-[var(--accent)] text-[var(--accent-fg)] px-8 py-3 rounded-full text-sm font-medium font-body hover:opacity-90 transition-opacity inline-block">
+              Create free account
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-[var(--border)] py-6">
+        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-xs text-fg-subtle font-body">
+          <span className="font-heading font-bold text-fg-muted">typeloft</span>
+          <span>© {new Date().getFullYear()}</span>
+        </div>
+      </footer>
+    </div>
   )
+}
+
+function TypingPreview() {
+  const text = "The quick brown fox jumps over the lazy dog..."
+  const typed = "The quick brown f"
+
+  return (
+    <div className="max-w-2xl mx-auto border border-[var(--border)] rounded-2xl p-6 md:p-8 bg-[var(--surface)] text-left relative overflow-hidden group hover:border-[var(--fg-subtle)] transition-colors duration-500">
+      <div className="absolute top-3 left-4 flex gap-1.5">
+        <span className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[var(--border)]" />
+      </div>
+      <div className="mt-4 text-base md:text-lg leading-relaxed font-body">
+        <span className="text-[var(--success)]">{typed}</span>
+        <span className="inline-block w-[2px] h-5 bg-[var(--fg)] animate-cursor-blink align-middle ml-[1px]" />
+        <span className="text-fg-muted">{text.slice(typed.length)}</span>
+      </div>
+      <div className="mt-4 flex gap-6 text-xs text-fg-subtle font-body">
+        <span>0 WPM</span>
+        <span>100% accuracy</span>
+        <span>0 / {text.length} chars</span>
+      </div>
+    </div>
+  )
+}
+
+function ThreeScene() {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return null
+
+  const { ThreeBackground } = require("@/components/three-background")
+  return <ThreeBackground />
 }
